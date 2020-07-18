@@ -5,7 +5,9 @@ import java.util.Random;
 public class TickTackToe {
 
     private static char[][] map; // поле
-    private static int SIZE = 3; // размер поля
+    private static int SIZE = 4; // размер поля
+    private static int prioritet_i, prioritet_j;
+    /*private static boolean check;*/
 
     private static int[] winComb = new int[8]; // для рейтинга каждой выигрышной комбинации
 
@@ -52,12 +54,13 @@ public class TickTackToe {
     }
 
     private static void printMap() { // вывод поля
-        for (int i = 0; i <= SIZE; i++) {
+        System.out.print("  ");
+        for (int i = 0; i < SIZE; i++) {
             System.out.print(i + " ");
         }
         System.out.println();
         for (int i = 0; i < SIZE; i++) {
-            System.out.print((i+1) + " ");
+            System.out.print(i+ " ");
             for (int j = 0; j < SIZE; j++) {
                 System.out.print(map[i][j] + " ");
             }
@@ -70,11 +73,10 @@ public class TickTackToe {
         int x, y;
         do {
             System.out.println("Введите координату через пробел (строка, столбец): ");
-            y = scanner.nextInt() - 1;
-            x = scanner.nextInt() - 1;
+            y = scanner.nextInt();
+            x = scanner.nextInt();
         } while (isCellValid(x, y) == false);
         map[y][x] = DOT_X;
-        winningCombination(DOT_X, y, x); // внесение данных в рейтинг комбинаций
     }
 
     private static void stupidComputerTurn() {
@@ -83,179 +85,124 @@ public class TickTackToe {
             y = random.nextInt(SIZE);
             x = random.nextInt(SIZE);
         } while (isCellValid(x, y) == false);
-        System.out.println("Компьютер ходит: " + (y + 1) + (x + 1));
+        System.out.println("Компьютер ходит: " + y + " " + x);
         map[y][x] = DOT_O;
-        winningCombination(DOT_O, y, x); // внесение данных в рейтинг комбинаций
     }
 
-    private static void smartComputerTurn() { // умный компьютер
-        int max = 0, min = 0; // для вычисления приоритетных комбинаций
-        int mx = 0, mn = 0; // для запоминания номеров приоритетных комбинаций
-        int prioritetComb = 0; // номер комбинации, в которую лучше поставить нолик
-        int y = 0, x = 0;
-        for (int i = 0; i < 8; i++) {
-            if (winComb[i] != 4 && winComb[i] >= max) { // если 4 - эта выигрышная комбинация заполнена
-                max = winComb[i];
-                mx = i; // запомнить номер комбинации
-            }
-            if (winComb[i] != -1 && winComb[i] < min) { // если -1 - эта выигрышная комбинация заполнена
-                min = winComb[i];
-                mn = i; // запомнить номер комбинации
-            }
-        }
-            if (max == 1) {
-                prioritetComb = mx;
-            }
-            if (min == -2) {
-                prioritetComb = mn;
-            }
-            if (max == 0) {
-                prioritetComb = mx;
-            }
-            if (max == 3) {
-                prioritetComb = mx;
-            }
-            if (min == -4) {
-                prioritetComb = mn;
-            }
-            if (max == 6) {
-                prioritetComb = mx;
-            }
+    private static void smartComputerTurn() {
+        int scored = 0;
+        int maxScored = -1;
+        if (!proverka(DOT_O)) {
+            if (!proverka(DOT_X)) {
+                for (int i = 0; i < SIZE; i++) {
+                    for (int j = 0; j < SIZE; j++) {
+                        scored = 0;
+                        if (map[i][j] == DOT_EMPTY) {
+                            if ((i - 1 >= 0) && (j - 1 >= 0) && map[i][j] == DOT_O) { // лево-верх
+                                scored++;
+                            }
+                            if ((i - 1 >= 0) && map[i][j] == DOT_O) { // верх
+                                scored++;
+                            }
+                            if ((i - 1 >= 0) && (j + 1 < SIZE) && map[i][j] == DOT_O) { // право-верх
+                                scored++;
+                            }
+                            if ((j + 1 < SIZE) && map[i][j] == DOT_O) { // право
+                                scored++;
+                            }
+                            if ((i + 1 < SIZE) && (j + 1 < SIZE) && map[i][j] == DOT_O) { // право-низ
+                                scored++;
+                            }
+                            if ((i + 1 < SIZE) && map[i][j] == DOT_O) { // низ
+                                scored++;
+                            }
+                            if ((i + 1 < SIZE) && (j - 1 >= 0) && map[i][j] == DOT_O) { // лево-низ
+                                scored++;
+                            }
+                            if ((j - 1 >= 0) && map[i][j] == DOT_O) { // лево
+                                scored++;
+                            }
 
-        switch (prioritetComb) {
-            case 0:
-                y = 0;
-                if (map[0][0] == DOT_EMPTY) {
-                    x = 0;
-                } else if (map[0][1] == DOT_EMPTY) {
-                    x = 1;
-                } else if (map[0][2] == DOT_EMPTY) {
-                    x = 2;
+                            if (scored >= maxScored) {
+                                maxScored = scored;
+                                prioritet_i = i;
+                                prioritet_j = j;
+                            }
+                        }
+                    }
                 }
-                break;
-            case 1:
-                y = 1;
-                if (map[1][0] == DOT_EMPTY) {
-                    x = 0;
-                } else if (map[1][1] == DOT_EMPTY) {
-                    x = 1;
-                } else if (map[1][2] == DOT_EMPTY) {
-                    x = 2;
-                }
-                break;
-            case 2:
-                y = 2;
-                if (map[2][0] == DOT_EMPTY) {
-                    x = 0;
-                } else if (map[2][1] == DOT_EMPTY) {
-                    x = 1;
-                } else if (map[2][2] == DOT_EMPTY) {
-                    x = 2;
-                }
-                break;
-            case 3:
-                x = 0;
-                if (map[0][0] == DOT_EMPTY) {
-                    y = 0;
-                } else if (map[1][0] == DOT_EMPTY) {
-                    y = 1;
-                } else if (map[2][0] == DOT_EMPTY) {
-                    y = 2;
-                }
-                break;
-            case 4:
-                x = 1;
-                if (map[0][1] == DOT_EMPTY) {
-                    y = 0;
-                } else if (map[1][1] == DOT_EMPTY) {
-                    y = 1;
-                } else if (map[2][1] == DOT_EMPTY) {
-                    y = 2;
-                }
-                break;
-            case 5:
-                x = 2;
-                if (map[0][2] == DOT_EMPTY) {
-                    y = 0;
-                } else if (map[1][2] == DOT_EMPTY) {
-                    y = 1;
-                } else if (map[2][2] == DOT_EMPTY) {
-                    y = 2;
-                }
-                break;
-            case 6:
-                if (map[0][0] == DOT_EMPTY) {
-                    y = 0;
-                    x = 0;
-                } else if (map[1][1] == DOT_EMPTY) {
-                    y = 1;
-                    x = 1;
-                } else if (map[2][2] == DOT_EMPTY) {
-                    y = 2;
-                    x = 2;
-                }
-                break;
-            case 7:
-                if (map[0][2] == DOT_EMPTY) {
-                    y = 0;
-                    x = 2;
-                } else if (map[1][1] == DOT_EMPTY) {
-                    y = 1;
-                    x = 1;
-                } else if (map[2][0] == DOT_EMPTY) {
-                    y = 2;
-                    x = 0;
-                }
-                break;
+            }
         }
-        System.out.println("Компьютер ходит: " + (y + 1) + (x + 1));
-        map[y][x] = DOT_O;
-        winningCombination(DOT_O, y, x); // внесение данных в рейтинг комбинаций
+        System.out.println("Компьютер ходит: " + prioritet_i + " " + prioritet_j);
+        map[prioritet_i][prioritet_j] = DOT_O;
     }
 
-    private static void winningCombination (char playerSymbol, int y, int x) {
-        int point = (playerSymbol == DOT_X)? -2 : 3; // очки за постановку символа в ячейку,
-        if (y == 0) { // которые добавляются в ретинг комбинации
-            winComb[0] += point;
-            if (x == 0) {
-                winComb[3] += point;
-                winComb[6] += point;
+    private static boolean proverka(char symbol) {
+        boolean result = false, check = false;
+        int scored_X_1;
+        int scored_X_2;
+
+        for (int i = 0; i < SIZE; i++) { // для строк
+            scored_X_1 = 0;
+            for (int j = 0; j < SIZE; j++) {
+                if (map[i][j] == symbol) scored_X_1++;
             }
-            if (x == 1) {
-                winComb[4] += point;
-            }
-            if (x == 2) {
-                winComb[5] += point;
-                winComb[7] += point;
-            }
-        }
-        if (y == 1) {
-            winComb[1] += point;
-            if (x == 0) {
-                winComb[3] += point;
-            }
-            if (x == 1) {
-                winComb[4] += point;
-                winComb[6] += point;
-                winComb[7] += point;
-            }
-            if (x == 2) {
-                winComb[5] += point;
+            if (scored_X_1 == SIZE - 1) {
+                for (int k = 0; k < SIZE; k++) {
+                    if (map[i][k] == DOT_EMPTY) {
+                        prioritet_i = i;
+                        prioritet_j = k;
+                        check = true;
+                        break;
+                    }
+                }
             }
         }
-        if (y == 2) {
-            winComb[2] += point;
-            if (x == 0) {
-                winComb[3] += point;
+
+        for (int j = 0; j < SIZE; j++) { // для столбцов
+            scored_X_1 = 0;
+            for (int i = 0; i < SIZE; i++) {
+                if (map[i][j] == symbol) scored_X_1++;
             }
-            if (x == 1) {
-                winComb[4] += point;
-            }
-            if (x == 2) {
-                winComb[5] += point;
-                winComb[6] += point;
+            if (scored_X_1 == SIZE - 1) {
+                for (int k = 0; k < SIZE; k++) {
+                    if (map[k][j] == DOT_EMPTY) {
+                        prioritet_i = k;
+                        prioritet_j = j;
+                        check = true;
+                        break;
+                    }
+                }
             }
         }
+
+        scored_X_1 = 0;
+        scored_X_2 = 0;
+        for (int i = 0; i < SIZE; i++) { // для диагоналей
+            if (map[i][i] == symbol) scored_X_1++; // главная диагональ
+            if (map[i][SIZE - i - 1] == symbol) scored_X_2++; // побочная диагональ
+        }
+        if (scored_X_1 == SIZE - 1) {
+            for (int i = 0; i < SIZE; i++) {
+                if (map[i][i] == DOT_EMPTY) {
+                    prioritet_i = i;
+                    prioritet_j = i;
+                    check = true;
+                    break;
+                }
+            }
+        }
+        if (scored_X_2 == SIZE - 1) {
+            for (int i = 0; i < SIZE; i++) {
+                if (map[i][SIZE - i - 1] == DOT_EMPTY) {
+                    prioritet_i = i;
+                    prioritet_j = SIZE - i - 1;
+                    check = true;
+                    break;
+                }
+            }
+        }
+        return check;
     }
 
     private static boolean isCellValid(int x, int y) { // проверка ввода в ячейку
@@ -297,7 +244,11 @@ public class TickTackToe {
             for (int j = 0; j < SIZE; j++) {
                 if (map[i][j] == DOT_EMPTY) {
                     result = false;
+                    break;
                 }
+            }
+            if (!result) {
+                break;
             }
         }
         return result;
@@ -305,13 +256,39 @@ public class TickTackToe {
 
     private static boolean checkWin(char playerSymbol) {
         boolean result = false;
-        for (int i = 0; i < 8; i++) {
-            if (winComb[i] == -6) { // поиск комбинации, где все крестики
+        int scored;
+        int scored_2;
+        for (int i = 0; i < SIZE; i++) { // для строк
+            scored = 0;
+            for (int j = 0; j < SIZE; j++) {
+                if (map[i][j] == playerSymbol) scored++;
+            }
+            if (scored == SIZE) {
                 result = true;
-            } else if (winComb[i] == 9) { // поиск комбинации, где все нолики
-                result = true;
+                break;// конец игры
             }
         }
+        for (int j = 0; j < SIZE; j++) { // стобцы
+            scored = 0;
+            for (int i = 0; i < SIZE; i++) {
+                if (map[i][j] == playerSymbol) scored++;
+            }
+            if (scored == SIZE) {
+                result = true; // конец игры
+                break;
+            }
+        }
+
+        scored = 0;
+        scored_2 = 0;
+        for (int i = 0; i < SIZE; i++) {
+            if (map[i][i] == playerSymbol) scored++; // главная диагональ
+            if (map[i][SIZE - i - 1] == playerSymbol) scored_2++; // побочная диагональ
+        }
+        if (scored == SIZE || scored_2 == SIZE) {
+            result = true; // конец игры
+        }
+
         return result;
     }
 }
